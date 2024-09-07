@@ -21,36 +21,31 @@ chat_history = [system_prompt]
 def load_chat_history():
     history = []
     conn = sqlite3.connect("HISTORY.db")
-    query = "SELECT name from sqlite_master WHERE type='table' AND name='HIST';"
+    query = "SELECT name from sqlite_master WHERE type='table' AND name='HIST';"  # checks if table exists
     cursor = conn.execute(query)
     result = cursor.fetchone()
-    if result == None:
+    if result == None:  # if not creates the table
         cur = conn.cursor()
         query = "CREATE TABLE HIST(ID,USER_MESSAGE,RESPONSE)"
         cur.execute(query)
         conn.close()
-    else:
-        cursor = conn.execute("SELECT USER_MESSAGE,RESPONSE FROM HIST;")
+    else:  # if table exists selects user and response for response function
+        cursor = conn.execute("SELECT * FROM HIST;")
         for row in cursor:
-            temp_history = {}
-            temp_history["role"] = "user"
-            temp_history["content"] = row[0]
-            temp_history["role"] = "assistant"
-            temp_history["content"] = row[1]
+            temp_history = {"role": "user", "content": row[1]}
+            history.append(temp_history)
+            temp_history = {"role": "assistant", "content": row[2]}
             history.append(temp_history)
         conn.close()
     return history
 
 
-chat_history += load_chat_history()
-# print(load_chat_history)
+chat_history += load_chat_history()  # load it
 print(chat_history)
 
 
-def ai_response(chat_history):
+def ai_response(chat_history, user_input):
     # Get user input from the console
-    user_input = input("You: ")
-
     # Append the user input to the chat history
     chat_history.append({"role": "user", "content": user_input})
 
@@ -70,18 +65,25 @@ def save_chat_history(chat_history):
     ID = 0
     j = 0
     for i in range(int((len(chat_history) - 1) / 2)):
-        conn.execute(
+        conn.execute(  # execute
             """INSERT INTO HIST (ID, USER_MESSAGE, RESPONSE)
 				VALUES (?,?,?)""",
-            (ID, chat_history[j + 1]["content"], chat_history[j + 2]["content"]),
+            (
+                ID,
+                chat_history[j + 1]["content"],
+                chat_history[j + 2]["content"],
+            ),  # adds input, response to database for loading and memeory.
         )
+        ID += 1
         j += 2
         conn.commit()
-    cursor = conn.execute("SELECT id, user_message,response from HIST")
     conn.close()
 
 
-for i in range(5):
-    ai_response(chat_history)
-save_chat_history(chat_history)
-print(len(chat_history))
+while True:
+    user_input = input("You: ")
+    if user_input.lower() == "stop":
+        save_chat_history(chat_history)
+        break
+    else:
+        ai_response(chat_history, user_input)  # infinite loop whee
