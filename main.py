@@ -41,7 +41,7 @@ def load_chat_history():
 
 
 chat_history += load_chat_history()  # load it
-print(chat_history)
+temp_history = chat_history.copy()
 
 
 def ai_response(chat_history, user_input):
@@ -60,18 +60,23 @@ def ai_response(chat_history, user_input):
     print("Assistant:", response.choices[0].message.content)
 
 
-def save_chat_history(chat_history):
+def save_chat_history():
     conn = sqlite3.connect("HISTORY.db")
     ID = 0
     j = 0
-    for i in range(int((len(chat_history) - 1) / 2)):
+    to_commit = [system_prompt]
+    for i in chat_history:
+        if i not in temp_history:
+            to_commit.append(i)
+
+    for i in range(int((len(to_commit) - 1) / 2)):
         conn.execute(  # execute
             """INSERT INTO HIST (ID, USER_MESSAGE, RESPONSE)
 				VALUES (?,?,?)""",
             (
                 ID,
-                chat_history[j + 1]["content"],
-                chat_history[j + 2]["content"],
+                to_commit[j + 1]["content"],
+                to_commit[j + 2]["content"],
             ),  # adds input, response to database for loading and memeory.
         )
         ID += 1
@@ -83,7 +88,7 @@ def save_chat_history(chat_history):
 while True:
     user_input = input("You: ")
     if user_input.lower() == "stop":
-        save_chat_history(chat_history)
+        save_chat_history()
         break
     else:
         ai_response(chat_history, user_input)  # infinite loop whee
