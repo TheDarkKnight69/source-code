@@ -1,7 +1,6 @@
 from nltk.sentiment import SentimentIntensityAnalyzer
 import sqlite3
 import datetime
-import matplotlib.pyplot as plt
 
 
 def load_chat_history():
@@ -65,22 +64,3 @@ def save_mood_score(history):
 
 
 save_mood_score(history)
-
-
-def mood_graph():
-    x = []
-    y = []
-    conn = sqlite3.connect("mood_tracker.db")
-    cur = conn.execute("""SELECT DATETIME,MOOD_SCORE FROM MOOD""")
-    for row in cur:
-        x.append(row[0])
-        y.append(row[1])
-    conn.close()
-    plt.plot(x, y, "b o")
-    plt.xlabel("time")
-    plt.ylabel("moodScore")
-    plt.title("Mood Graph")
-    plt.show()
-
-
-mood_graph()
