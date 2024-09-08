@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 from groq import Groq
 import sqlite3
+import sys
 
 
 load_dotenv()
@@ -52,12 +53,22 @@ def ai_response(chat_history, user_input):
     response = client.chat.completions.create(
         model="llama3-70b-8192", messages=chat_history, max_tokens=100, temperature=1.2
     )
-    # Append the response to the chat history
-    chat_history.append(
-        {"role": "assistant", "content": response.choices[0].message.content}
-    )
-    # Print the response
-    print("Assistant:", response.choices[0].message.content)
+    if response.choices[0].message.content.startswith("!"):
+        chat_history.append(  # Append the response to the chat history
+            {"role": "assistant", "content": response.choices[0].message.content[2:]}
+        )
+
+        print(
+            "Assistant:", response.choices[0].message.content[2:]
+        )  # Print the response
+        save_chat_history()
+        sys.exit()
+    else:
+        chat_history.append(  # Append the response to the chat history
+            {"role": "assistant", "content": response.choices[0].message.content}
+        )
+
+        print("Assistant:", response.choices[0].message.content)
 
 
 def save_chat_history():
@@ -70,25 +81,25 @@ def save_chat_history():
             to_commit.append(i)
 
     for i in range(int((len(to_commit) - 1) / 2)):
-        conn.execute(  # execute
-            """INSERT INTO HIST (ID, USER_MESSAGE, RESPONSE)
-				VALUES (?,?,?)""",
-            (
-                ID,
-                to_commit[j + 1]["content"],
-                to_commit[j + 2]["content"],
-            ),  # adds input, response to database for loading and memeory.
-        )
-        ID += 1
-        j += 2
-        conn.commit()
+        if (
+            to_commit[j + 1]["role"] == "user"
+            and to_commit[j + 2]["role"] == "assistant"
+        ):
+            conn.execute(  # execute
+                """INSERT INTO HIST (ID, USER_MESSAGE, RESPONSE)
+		    		VALUES (?,?,?)""",
+                (
+                    ID,
+                    to_commit[j + 1]["content"],
+                    to_commit[j + 2]["content"],
+                ),  # adds input, response to database for loading and memeory.
+            )
+            ID += 1
+            j += 2
+            conn.commit()
     conn.close()
 
 
 while True:
     user_input = input("You: ")
-    if user_input.lower() == "stop":
-        save_chat_history()
-        break
-    else:
-        ai_response(chat_history, user_input)  # infinite loop whee
+    ai_response(chat_history, user_input)  # infinite loop whee
