@@ -8,7 +8,7 @@ def mood_graph():
     y = []
     labels = []
     conn = sqlite3.connect("mood_tracker.db")
-    cur = conn.execute("""SELECT DATETIME,MOOD_SCORE,MESSAGE FROM MOOD""")
+    cur = conn.execute("""SELECT TIME,MOOD_SCORE,MESSAGE FROM MOOD""")
     for row in cur:
         x.append(row[0][:16])
         y.append(row[1])
@@ -31,11 +31,8 @@ def mood_graph():
     cursor = mplcursors.cursor(line, hover=True)
     cursor.connect("add", lambda sel: sel.annotation.set_text(labels[int(sel.index)]))
 
-    plt.xlabel("X-axis")
-    plt.ylabel("Y-axis")
-    plt.title("Interactive Plot with Hover Tooltips")
-    plt.show()
-    plt.close(fig)
+    plt.xlabel("time")
+    plt.ylabel("moodScore")
+    plt.title("Your Mood Graph")
+    return fig
 
-
-mood_graph()
