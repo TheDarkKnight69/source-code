@@ -10,15 +10,18 @@ import sys
 import datetime
 
 load_dotenv()
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+
 system_prompt = {
     "role": "system",
-    "content": os.environ.get("prompt"),
+    "content": os.getenv("groq_prompt"),
 }
 
 chat_history = [system_prompt]
 
 
+def get_key():
+    global client
+    client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 def load_chat_history():
     history = []
     conn = sqlite3.connect("HISTORY.db")
@@ -46,6 +49,7 @@ temp_history = chat_history.copy()
 time_record = []
 
 def ai_response(chat_history, user_input):
+    get_key()
     time = datetime.datetime.now()
     # Get user input from the console
     # Append the user input to the chat history
@@ -59,14 +63,13 @@ def ai_response(chat_history, user_input):
         chat_history.append(  # Append the response to the chat history
             {"role": "assistant", "content": response.choices[0].message.content[2:]}
         )
-        save_chat_history()
-        return f"Assistant: {response.choices[0].message.content}"
+        return f"{response.choices[0].message.content[2:]}"
     else:
         chat_history.append(  # Append the response to the chat history
             {"role": "assistant", "content": response.choices[0].message.content}
         )
 
-        return f"Assistant: {response.choices[0].message.content}"
+        return f"{response.choices[0].message.content}"
 
 
 def save_chat_history():
